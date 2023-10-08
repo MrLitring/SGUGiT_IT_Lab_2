@@ -12,18 +12,22 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
-
-        private double[,] Coords;
+        double[,] Coords;
+        string lastPath = string.Empty;
+        int pointInSeries = 5;
 
         public Form1()
         {
             InitializeComponent();
             comboBox1.SelectedIndex = 2;
+            textBox1.Text = pointInSeries.ToString();
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -38,7 +42,9 @@ namespace WindowsFormsApp1
             else
             {
                 filename = ofd.FileName;
-                ReadFile(filename);
+                lastPath = filename;
+                label3.Text = $"Точек: {LineCount(filename).ToString()}";
+                label5.Text = $"Серий: {LineCount(filename) / pointInSeries}";
             }
         }
 
@@ -52,33 +58,47 @@ namespace WindowsFormsApp1
                     CreateSeries(i);
                 }
             }
-            Drawed();
+            Drawing();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            Form2 form2 = new Form2();
+            form2.Show();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            checkedListBox1.Items.Clear();
+            ReadFile(lastPath);
         }
 
         private void comboBox1_SelectionChangeCommitted(object sender, EventArgs e)
         {
-            Drawed();
+            Drawing();
         }
 
-        private void Drawed()
+        private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            int var = comboBox1.SelectedIndex;
-            if (var == 1) { var = 3; }
-            else if (var == 2) { var = 4; }
-
-            foreach (Series ser in chart1.Series)
+            if (textBox1.Text != "" && textBox1.Text != "0")
             {
-                ser.ChartType = (System.Windows.Forms.DataVisualization.Charting.SeriesChartType)var;
-            };
+                int points = int.Parse(textBox1.Text);
+                pointInSeries = points;
+                label5.Text = $"Серий: " + (LineCount(lastPath) / points).ToString();
+            }
         }
 
+
+
         //
         //
         //
+
 
         private void ReadFile(string filename)
         {
-            Coords = new double[15, 2];
+            int cord = LineCount(lastPath);
+            Coords = new double[cord, 2];
 
             string line = string.Empty;
             int point = 0;
@@ -92,11 +112,11 @@ namespace WindowsFormsApp1
                     Coords[point, 0] = Convert.ToDouble(splitLine[0]);
                     Coords[point, 1] = Convert.ToDouble(splitLine[1]);
 
-                    if (point % 5 == 0)
+                    if (point % pointInSeries == 0)
                     {
                         string NameSeries = "Серия " + Convert.ToString(ser);
                         checkedListBox1.Items.Add(NameSeries);
-                        ser++;
+                        ser++;   
                     }
                     point++;
                 }
@@ -112,18 +132,56 @@ namespace WindowsFormsApp1
             chart1.Series[NameSerie].Enabled = true;
             chart1.Series[NameSerie].BorderWidth = 2;
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < pointInSeries; i++)
             {
-                x = Coords[i + NumSerie * 5, 0];
-                y = Coords[i + NumSerie * 5, 1];
-                chart1.Series[NameSerie].Points.Add(x,y);
+                try
+                { 
+                    x = Coords[i + NumSerie * pointInSeries, 0];
+                    y = Coords[i + NumSerie * pointInSeries, 1];
+                    chart1.Series[NameSerie].Points.Add(x, y);
+                }
+                catch
+                {
+                    
+                }
             }
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void Drawing()
         {
-            Form2 form2 = new Form2();
-            form2.Show();
+            int var = comboBox1.SelectedIndex;
+            if (var == 1) { var = 3; }
+            else if (var == 2) { var = 4; }
+
+            foreach (Series ser in chart1.Series)
+            {
+                ser.ChartType = (System.Windows.Forms.DataVisualization.Charting.SeriesChartType)var;
+            };
         }
+
+        
+
+        
+
+        private int LineCount(string path)
+        {
+            string line;
+            int count = 0;
+
+            if (path != "")
+            {
+                using (StreamReader sr = new StreamReader(path))
+                {
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        
     }
 }

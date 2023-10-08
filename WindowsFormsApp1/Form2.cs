@@ -100,7 +100,7 @@ namespace WindowsFormsApp1
                         int y = random.Next(int.Parse(textBox3.Text), int.Parse(textBox4.Text));
                         streamWriter.WriteLine($"{x} {y}");
                         progressBar1.Value++;
-                        System.Threading.Thread.Sleep(150);
+                        System.Threading.Thread.Sleep(10);
                     }
                 }
 
